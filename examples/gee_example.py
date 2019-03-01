@@ -53,7 +53,7 @@ job = con.create_job(pg.graph)
 print(job.job_id)
 print(job.start_job())
 print (job.describe_job())
-# time.wait(5)
+time.wait(5)
 job.download_results("/tmp/testfile")
 
 

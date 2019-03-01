@@ -419,6 +419,7 @@ class RESTConnection(Connection):
 
         auth_header = self.authent.get_header()
         auth = self.authent.get_auth()
+        test = self.endpoint+path
         return requests.post(self.endpoint+path, json=postdata, headers=auth_header, auth=auth)
 
     def delete(self, path, postdata):
