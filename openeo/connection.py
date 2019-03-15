@@ -38,6 +38,17 @@ class Connection(ABC):
         """
 
     @abstractmethod
+    def version(self, timestamp=None) -> dict:
+        """
+        Returns the version of the back end at a given time stamp. If the timestamp is None,
+        the current version is returned by the method.
+
+        :param timestamp: Datetime object to get the version of the back end at this time.
+
+        :return: version_dict: Contains the available version information of the back end.
+        """
+
+    @abstractmethod
     def list_file_types(self) -> dict:
         """
         Loads all available output formats.
@@ -66,6 +77,14 @@ class Connection(ABC):
         Loads detailed information of a specific image collection.
         :param name: String Id of the collection
         :return: data_dict: Dict Detailed information about the collection
+        """
+
+    @abstractmethod
+    def describe_data_pid(self, pid) -> dict:
+        """
+        Loads detailed information of a specific data pid.
+        :param pid: Data PID
+        :return: data_dict: Dict Detailed information about the data set represented by the dat pid.
         """
 
     @abstractmethod

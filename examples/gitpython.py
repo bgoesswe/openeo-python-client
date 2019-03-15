@@ -3,7 +3,7 @@ from datetime import datetime
 import pytz
 import git
 import json
-
+import os
 utc = pytz.UTC
 
 def get_commit_by_timestamp(repo, timestamp):
@@ -42,3 +42,9 @@ filter_args_str = filter_args_str.replace("None", "null")
 print(filter_args_str)
 filter_args = json.loads(filter_args_str)
 print(filter_args)
+
+def display_text_file(file):
+    with open(file.path) as fp:
+        return fp.read()
+
+display_text_file(None)

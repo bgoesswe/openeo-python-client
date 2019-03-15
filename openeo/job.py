@@ -57,6 +57,24 @@ class Job(ABC):
         # GET /jobs/{job_id}/results > ...
         pass
 
+    def diff(self, target):
+        """ Compare job context model."""
+        # GET /jobs/{job_id}/results > ...
+        pass
+
+    def get_data_pid(self):
+        """ Returns resolvable data PID of the job."""
+        # GET /jobs/{job_id}/results > ...
+        pass
+
+    def describe_input_data(self):
+        """ Returns resolvable dict about the input data PID of the job."""
+        pass
+
+    def get_backend_version(self):
+        """ Returns back end version dict at the time of the execution."""
+        pass
+
 # TODO: All below methods are depricated (at least not specified in the coreAPI)
     def download(self, outputfile: str, outputformat: str):
         """ Download the result as a raster."""

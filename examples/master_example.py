@@ -1,7 +1,7 @@
 import openeo
 import logging
 import time
-
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO)
 
@@ -18,6 +18,12 @@ password = "test123"
 
 
 con = openeo.connect(GEE_DRIVER_URL, auth_options={})
+
+timestamp = datetime.now()
+
+version = con.version(timestamp)
+
+#date = datetime.strptime('2019-03-15 15:44:25.410621', '%Y-%m-%d %H:%M:%S.%f')
 
 #Test Connection
 print(con.list_processes())
@@ -47,12 +53,21 @@ print(pg.graph)
 pg = processes.min_time(pg)
 print(pg.graph)
 
+
 # Test Job
 
 job = con.create_job(pg.graph)
+
+#job2 = con.create_job(pg.graph)
 print(job.job_id)
 print(job.start_job())
 time.sleep(5)
-print(job.describe_job())
+#job2.start_job()
+time.sleep(5)
+#job_comp = job.diff(job2)
+#job_desc = job.get_data_pid()
+#job_desc = job.get_backend_version()
+job_desc = job.describe_job()
+print(job_desc)
 
 #job.download_results("/tmp/testfile")

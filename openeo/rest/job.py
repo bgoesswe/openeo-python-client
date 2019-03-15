@@ -4,6 +4,29 @@ from openeo.job import Job, JobResult
 from typing import List
 import urllib.request
 import requests
+from datetime import datetime
+
+
+class DictDiffer(object):
+    """
+    Calculate the difference between two dictionaries as:
+    (1) items added
+    (2) items removed
+    (3) keys same in both but changed values
+    (4) keys same in both and unchanged values
+    """
+    def __init__(self, current_dict, past_dict):
+        self.current_dict, self.past_dict = current_dict, past_dict
+        self.set_current, self.set_past = set(current_dict.keys()), set(past_dict.keys())
+        self.intersect = self.set_current.intersection(self.set_past)
+    def added(self):
+        return self.set_current - self.intersect
+    def removed(self):
+        return self.set_past - self.intersect
+    def changed(self):
+        return set(o for o in self.intersect if self.past_dict[o] != self.current_dict[o])
+    def unchanged(self):
+        return set(o for o in self.intersect if self.past_dict[o] == self.current_dict[o])
 
 class RESTJobResult(JobResult):
     def __init__(self, url):
@@ -23,7 +46,14 @@ class RESTJob(Job):
         """ Get all job information."""
         # GET /jobs/{job_id}
         request = self.connection.get("/jobs/{}".format(self.job_id))
-        return self.connection.parse_json_response(request)
+        response = self.connection.parse_json_response(request)
+
+        if response["metrics"]["input_data"] in str(response["process_graph"]):
+            if "data_pid" in str(response["process_graph"]):
+                response["logs"] = "Warning: data PID changed"
+                response["status"] = "finished with warnings"
+
+        return response
 
     def update_job(self, process_graph=None, output_format=None,
                    output_parameters=None, title=None, description=None,
@@ -65,6 +95,92 @@ class RESTJob(Job):
         """ Get document with download links."""
         # GET /jobs/{job_id}/results
         pass
+
+    def get_data_pid(self):
+        """ Returns resolvable data PID of the job."""
+
+        desc = self.describe_job()
+
+        if "input_data" in desc:
+            input_data = desc["input_data"]
+
+        input_data = self.connection.endpoint+"/collections/"+input_data
+
+        return input_data
+
+    def get_backend_version(self):
+        """ Returns back end version dict at the time of the execution."""
+        desc = self.describe_job()
+
+        backend_version = None
+
+        if "metrics" in desc:
+            if "start_time" in desc["metrics"]:
+                start_time = desc["metrics"]["start_time"]
+                timestamp = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S.%f')
+                backend_version = self.connection.version(timestamp)
+
+        return backend_version
+
+    def describe_input_data(self):
+        """ Returns resolvable dict about the input data PID of the job."""
+
+        desc = self.describe_job()
+
+        if "input_data" in desc:
+            input_data = desc["input_data"]
+        else:
+            return None
+
+        if input_data and self.connection:
+            return self.connection.describe_data_pid(input_data)
+        else:
+            return None
+
+    def diff(self, target_job):
+        """ Compare job context model."""
+
+        self_cm = self.describe_job()
+        if "metrics" in self_cm:
+            if "process_graph" in self_cm:
+                self_cm["metrics"]["process_graph"] = self_cm["process_graph"]
+                self_cm = self_cm["metrics"]
+        else:
+            return None
+
+        target_cm = target_job.describe_job()
+        if "metrics" in target_cm:
+            if "process_graph" in target_cm:
+                target_cm["metrics"]["process_graph"] = target_cm["process_graph"]
+                target_cm = target_cm["metrics"]
+        else:
+            return None
+
+        job_comp = DictDiffer(self_cm, target_cm)
+
+        output_dict = {}
+
+        added = job_comp.added()
+        removed = job_comp.removed()
+        changed = job_comp.changed()
+        unchanged = job_comp.unchanged()
+
+        for elem in unchanged:
+            output_dict[elem] = "EQUAL"
+        for elem in added:
+            if not "added" in output_dict:
+                output_dict["added"] = {}
+            output_dict["added"][elem] = target_cm[elem]
+        for elem in removed:
+            if not "removed" in output_dict:
+                output_dict["removed"] = {}
+            output_dict["removed"] = elem
+        for elem in changed:
+            if not "different" in output_dict:
+                output_dict["different"] = {}
+            output_dict["different"][elem] = target_cm[elem]
+
+        return output_dict
 
     def download_results(self, target):
         """ Download job results."""

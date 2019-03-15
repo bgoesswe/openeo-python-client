@@ -181,6 +181,37 @@ class RESTConnection(Connection):
         else:
             raise ValueError("Invalid argument col_id: {}".format(str(name)))
 
+    def version(self, timestamp=None) -> dict:
+        """
+        Returns the version of the back end at a given time stamp. If the timestamp is None,
+        the current version is returned by the method.
+
+        :param timestamp: Datetime object to get the version of the back end at this time.
+
+        :return: version_dict: Contains the available version information of the back end.
+        """
+
+
+        if timestamp:
+            timestamp = timestamp.strftime('%Y%m%d%H%M%S.%f')
+            data_info = self.get(self.root + '/version/{}'.format(timestamp), auth=False)
+        else:
+            data_info = self.get(self.root + '/version', auth=False)
+
+        return self.parse_json_response(data_info)
+
+    def describe_data_pid(self, pid) -> dict:
+        """
+        Loads detailed information of a specific data pid.
+        :param pid: Data PID
+        :return: data_dict: Dict Detailed information about the data set represented by the dat pid.
+        """
+        if pid:
+            data_info = self.get(self.root + '/collections/{}'.format(pid), auth=False)
+            return self.parse_json_response(data_info)
+        else:
+            raise ValueError("Invalid argument col_id: {}".format(str(pid)))
+
     def list_processes(self) -> dict:
         # TODO: Maybe format the result dictionary so that the process_id is the key of the dictionary.
         """
