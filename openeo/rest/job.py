@@ -41,19 +41,37 @@ class RESTJob(Job):
     def __init__(self, job_id: str, connection: Connection):
         super().__init__(job_id)
         self.connection = connection
+        self._cached_desc = None
 
+
+    def get_remote_desc(self):
+        request = self.connection.get("/jobs/{}".format(self.job_id))
+        if request.status_code == 200 or request.status_code == 201:
+            response = self.connection.parse_json_response(request)
+
+            if response["metrics"]["input_data"] in str(response["process_graph"]):
+                if "data_pid" in str(response["process_graph"]):
+                    response["logs"] = "Warning: data PID changed"
+                    response["status"] = "finished with warnings"
+
+            response["context_model"] = response["metrics"]
+            return response
+        else:
+            return {"status": "submitted"}
+
+    @property
     def describe_job(self):
         """ Get all job information."""
         # GET /jobs/{job_id}
-        request = self.connection.get("/jobs/{}".format(self.job_id))
-        response = self.connection.parse_json_response(request)
 
-        if response["metrics"]["input_data"] in str(response["process_graph"]):
-            if "data_pid" in str(response["process_graph"]):
-                response["logs"] = "Warning: data PID changed"
-                response["status"] = "finished with warnings"
+        if self._cached_desc is None:
+            self._cached_desc = self.get_remote_desc()
 
-        return response
+        else:
+            if self._cached_desc["status"] == "submitted":
+                self._cached_desc = self.get_remote_desc()
+
+        return self._cached_desc
 
     def update_job(self, process_graph=None, output_format=None,
                    output_parameters=None, title=None, description=None,
@@ -96,10 +114,12 @@ class RESTJob(Job):
         # GET /jobs/{job_id}/results
         pass
 
-    def get_data_pid(self):
+    def get_data_pid_url(self):
         """ Returns resolvable data PID of the job."""
 
-        desc = self.describe_job()
+        desc = self.describe_job
+
+        input_data = ""
 
         if "input_data" in desc:
             input_data = desc["input_data"]
@@ -108,9 +128,20 @@ class RESTJob(Job):
 
         return input_data
 
+    def get_data_pid(self):
+        """ Returns resolvable data PID of the job."""
+
+        desc = self.describe_job
+
+        input_data  = None
+        if "input_data" in desc:
+            input_data = desc["input_data"]
+
+        return input_data
+
     def get_backend_version(self):
         """ Returns back end version dict at the time of the execution."""
-        desc = self.describe_job()
+        desc = self.describe_job
 
         backend_version = None
 
@@ -125,7 +156,7 @@ class RESTJob(Job):
     def describe_input_data(self):
         """ Returns resolvable dict about the input data PID of the job."""
 
-        desc = self.describe_job()
+        desc = self.describe_job
 
         if "input_data" in desc:
             input_data = desc["input_data"]
@@ -140,7 +171,7 @@ class RESTJob(Job):
     def diff(self, target_job):
         """ Compare job context model."""
 
-        self_cm = self.describe_job()
+        self_cm = self.describe_job
         if "metrics" in self_cm:
             if "process_graph" in self_cm:
                 self_cm["metrics"]["process_graph"] = self_cm["process_graph"]
@@ -148,7 +179,7 @@ class RESTJob(Job):
         else:
             return None
 
-        target_cm = target_job.describe_job()
+        target_cm = target_job.describe_job
         if "metrics" in target_cm:
             if "process_graph" in target_cm:
                 target_cm["metrics"]["process_graph"] = target_cm["process_graph"]

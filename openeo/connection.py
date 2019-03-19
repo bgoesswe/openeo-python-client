@@ -38,6 +38,14 @@ class Connection(ABC):
         """
 
     @abstractmethod
+    def resetdb(self) -> bool:
+        """
+        Resets the job, query and process graph database
+
+        :return:
+        """
+
+    @abstractmethod
     def version(self, timestamp=None) -> dict:
         """
         Returns the version of the back end at a given time stamp. If the timestamp is None,

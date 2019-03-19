@@ -77,6 +77,18 @@ class RESTConnection(Connection):
         """
         return self.not_supported()
 
+    def resetdb(self) -> bool:
+        """
+        Resets the job, query and process graph database
+
+        :return:
+        """
+
+        response1 = self.get(self.root + '/resetjobsdb', auth=False)
+        response2 = self.get(self.root + '/resetpgdb', auth=False)
+
+        return True
+
     def authenticate_basic(self, username, password):
         """
         Authenticates a user to the backend using HTTP Basic.
