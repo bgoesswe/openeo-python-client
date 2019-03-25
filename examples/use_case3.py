@@ -61,7 +61,7 @@ pgC = processes.max_time(pgC)
 
 # Create job C out of the process graph C (pgC)
 
-jobC = con.create_job(pgC.graph)
+jobC = con.create_job(pgC.graph) # differs from job A
 jobC.start_job()
 
 # Wait until the job execution was finished
@@ -73,4 +73,6 @@ while desc["status"] == "submitted":
 
 diffAB = jobA.diff(jobB)
 diffAC = jobA.diff(jobC)
+logging.info(diffAB)
+logging.info(diffAC)
 print("finished")

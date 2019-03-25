@@ -46,6 +46,15 @@ class Connection(ABC):
         """
 
     @abstractmethod
+    def get_filelist(self, data_pid) -> dict:
+        # TODO: Maybe create some kind of Data class.
+        """
+        Loads detailed information, including the filelist of a specific data pid.
+        :param data_pid: String Id of the collection
+        :return: data_dict: Dict Detailed information about the collection
+        """
+
+    @abstractmethod
     def version(self, timestamp=None) -> dict:
         """
         Returns the version of the back end at a given time stamp. If the timestamp is None,

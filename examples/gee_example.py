@@ -1,7 +1,8 @@
 import openeo
 import logging
 import time
-
+from openeo.auth.auth_bearer import BearerAuth
+from openeo.rest.job import RESTJob
 
 logging.basicConfig(level=logging.INFO)
 
@@ -17,7 +18,7 @@ password = "test123"
 #session = openeo.session("nobody", GEE_DRIVER_URL)
 
 
-con = openeo.connect(GEE_DRIVER_URL, auth_options={"username": user, "password": password})
+con = openeo.connect(GEE_DRIVER_URL, auth_type=BearerAuth, auth_options={"username": user, "password": password})
 
 #Test Connection
 print(con.list_processes())
@@ -38,7 +39,7 @@ print(cap.list_plans())
 processes = con.get_processes()
 pg = processes.get_collection(name="COPERNICUS/S2")
 print(pg.graph)
-pg = processes.filter_bbox(pg, west=10.288696, south=45.935871, east=12.189331, north=46.905246, crs="EPSG:4326")
+pg = processes.filter_bbox(pg, west=10, south=10, east=12, north=12, crs="EPSG:4326")
 print(pg.graph)
 pg = processes.filter_daterange(pg, extent=["2017-05-01T00:00:00Z", "2017-05-31T23:59:59Z"])
 print(pg.graph)
@@ -49,14 +50,16 @@ print(pg.graph)
 
 # Test Job
 
-job = con.create_job(pg.graph)
-print(job.job_id)
-print(job.start_job())
-print(job.describe_job())
+#job = con.create_job(pg.graph)
+#print(job.job_id)
+#print(job.start_job())
+#print(job.describe_job)
+job = RESTJob(job_id="2aLIF77FC2CQi9yX", connection=con)
 time.sleep(20)
-job.download_results("/tmp/testfile")
+job.download_results("/tmp/testfile2")
 
-
+# 10.228271,45.537137,12.425537,46.860191
+# west, south, east, north
 
 # PoC JSON:
 # {

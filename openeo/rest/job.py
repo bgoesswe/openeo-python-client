@@ -49,12 +49,13 @@ class RESTJob(Job):
         if request.status_code == 200 or request.status_code == 201:
             response = self.connection.parse_json_response(request)
 
-            if response["metrics"]["input_data"] in str(response["process_graph"]):
-                if "data_pid" in str(response["process_graph"]):
-                    response["logs"] = "Warning: data PID changed"
-                    response["status"] = "finished with warnings"
+            if "metrics" in response:
+                if response["metrics"]["input_data"] in str(response["process_graph"]):
+                    if "data_pid" in str(response["process_graph"]):
+                        response["logs"] = "Warning: data PID changed"
+                        response["status"] = "finished with warnings"
 
-            response["context_model"] = response["metrics"]
+                response["context_model"] = response["metrics"]
             return response
         else:
             return {"status": "submitted"}

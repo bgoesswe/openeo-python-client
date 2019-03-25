@@ -40,5 +40,10 @@ context_model = jobA.describe_job["context_model"]
 
 interpreter = context_model["interpreter"]
 code_env = context_model["code_env"]
+input_data = jobA.get_data_pid_url()
 backend_version = jobA.get_backend_version()
+logging.info("Interpreter: {}".format(interpreter))
+logging.info("Code Environment: {}".format(code_env))
+logging.info("Input Data PID URL: {}".format(input_data))
+logging.info("Back End Version (commit): {}".format(backend_version["commit"]))
 print("Finished")

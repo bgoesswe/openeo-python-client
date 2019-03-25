@@ -20,8 +20,6 @@ pgA = processes.filter_bbox(pgA, west=10.288696, south=45.935871, east=12.189331
 pgA = processes.ndvi(pgA, nir="B08", red="B04")
 pgA = processes.min_time(pgA)
 
-
-
 # Create job A out of the process graph A (pgA)
 
 jobA = con.create_job(pgA.graph)
@@ -38,11 +36,12 @@ pidA_url = jobA.get_data_pid_url()
 print(pidA_url)
 
 pidA = jobA.get_data_pid()
-
+# retrieve information about the pidA e.g. executed query and description about the dataset.
 desc = con.describe_collection(pidA)
 
 query = desc["query"]
-file_list = desc["input_files"]
+# re-execute query and get the resulting file list from the back end
+file_list = con.get_filelist(pidA)
 
 ''' 3. Researcher A cites the input data in a publication  '''
 
