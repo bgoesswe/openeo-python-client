@@ -3,6 +3,7 @@ from unittest import TestCase
 import openeo
 from .testdata.equal_process_graphs import equal_process_graphs, process_graph_filterorder
 from .testdata.diff_process_graphs import diff_process_graphs
+import time
 DRIVER_URL = "http://openeo.local.127.0.0.1.nip.io"
 
 class TestQueryPID(TestCase):
@@ -25,6 +26,7 @@ class TestQueryPID(TestCase):
         job_list = []
         for graph in equal_process_graphs:
             #print(graph)
+            #time.sleep(2)
             job = self.con.create_job(graph)
             job.start_job()
             job_list.append(job)
