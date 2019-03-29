@@ -193,7 +193,7 @@ class RESTConnection(Connection):
         else:
             raise ValueError("Invalid argument col_id: {}".format(str(name)))
 
-    def get_filelist(self, data_pid) -> dict:
+    def get_filelist(self, data_pid, updated=False) -> dict:
         # TODO: Maybe create some kind of Data class.
         """
         Loads detailed information, including the filelist of a specific data pid.
@@ -201,7 +201,10 @@ class RESTConnection(Connection):
         :return: data_dict: Dict Detailed information about the collection
         """
         if data_pid:
-            data_info = self.get(self.root + '/collections/{}/result'.format(data_pid), auth=False)
+            if updated:
+                data_info = self.get(self.root + '/collections/{}/updatedresult'.format(data_pid), auth=False)
+            else:
+                data_info = self.get(self.root + '/collections/{}/result'.format(data_pid), auth=False)
             return self.parse_json_response(data_info)
         else:
             raise ValueError("Invalid argument col_id: {}".format(str(data_pid)))
@@ -424,7 +427,7 @@ class RESTConnection(Connection):
 
     def create_job(self, process_graph, output_format=None, output_parameters={},
                    title=None, description=None, plan=None, budget=None,
-                   additional={}):
+                   additional={}, updated=None, deleted=None):
         """
         Posts a job to the back end.
         :param process_graph: String data of the job (e.g. process graph)
@@ -432,6 +435,12 @@ class RESTConnection(Connection):
         """
 
         process_graph = {"process_graph": process_graph}
+
+        # Simulating Changes at the data back end.
+        if updated:
+            process_graph["updated"] = updated
+        if deleted:
+            process_graph["deleted"] = deleted
 
         job_status = self.post("/jobs", process_graph)
 
