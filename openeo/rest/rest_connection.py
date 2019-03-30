@@ -13,7 +13,8 @@ from openeo.rest.job import RESTJob
 
 import json
 from openeo.connection import Connection
-
+from datetime import datetime, timedelta
+import time
 
 """
 openeo.sessions
@@ -88,6 +89,38 @@ class RESTConnection(Connection):
         response2 = self.get(self.root + '/resetpgdb', auth=False)
 
         return True
+
+    def update_file(self, updated=datetime.utcnow(), deleted=False) -> bool:
+        """
+        Resets the job, query and process graph database
+
+        :return:
+        """
+
+        if updated:
+            #updated = updated + timedelta(minutes=1)
+            time.sleep(10)
+            updated = updated.strftime('%Y-%m-%d %H:%M:%S.%f')
+
+        mockupstate = { "process_graph": { "updatetime": updated, "deleted": deleted}}
+
+
+        job_status = self.post("/updaterecord", mockupstate)
+
+        return True
+
+    def get_mockupstate(self) -> dict:
+        """
+        Resets the job, query and process graph database
+
+        :return:
+        """
+
+        info = self.get(self.root + '/mupdatestate')
+        return self.parse_json_response(info)
+
+        return True
+
 
     def authenticate_basic(self, username, password):
         """

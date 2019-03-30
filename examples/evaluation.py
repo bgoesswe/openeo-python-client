@@ -53,10 +53,13 @@ logging.info("Query re-execution filelist: {}".format(file_list))
 ''' 2. Update one of the resulting files of the PID-A query  '''
 # Use flag on the back end to switch to the simulation CSW back end.
 logging.info("Update one of the resulting files of the PID-A query")
+con.set_mockupstate(deleted=True)
+file2_list = con.get_filelist(pidA)
 
 ''' 3. Researcher A cites the input data in a publication  '''
 logging.info("3. Researcher A cites the input data in a publication")
 ''' 4. Researcher B uses the same input data of job A for job B  '''
+logging.info(str(file_list["input_files"] == file2_list["input_files"]))
 logging.info("4. Researcher B uses the same input data of job A for job B")
 # Take input data of job A by using the input data pid A of job A
 pgB = processes.get_collection(data_pid=pidA)
