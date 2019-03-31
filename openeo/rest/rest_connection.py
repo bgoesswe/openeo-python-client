@@ -493,6 +493,15 @@ class RESTConnection(Connection):
 
         return job
 
+    def get_job(self, job_id: str):
+        """
+        Returns job with the given id
+        :param job_id: Jpob Id
+        :return: job: RESTJob job object with the job id
+        """
+        job = RESTJob(job_id, self)
+        return job
+
     def parse_json_response(self, response: requests.Response):
         """
         Parses json response, if an error occurs it raises an Exception.
