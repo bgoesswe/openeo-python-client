@@ -1,6 +1,6 @@
 import openeo
 import logging
-
+import time
 # west, south, east, north
 datasets = [
 {"west": 10.288696, "south": 45.935871, "east": 12.189331, "north": 46.905246, "crs": "EPSG:4326", "begin": "2017-05-01", "end": "2017-05-31"}, # running example
@@ -12,25 +12,80 @@ datasets = [
 {"west": -2.449951, "south": 51.771239, "east": -2.239838, "north": 51.890901, "crs": "EPSG:4326", "begin": "2007-07-23", "end": "2007-07-24"}, # http:// dx.doi.org/ 10.1016/j.jag.2016.12.003 1
 {"west": 16.506958, "south": 47.529257, "east": 17.188110, "north": 48.022998, "crs": "EPSG:4326", "begin": "2007-07-23", "end": "2007-07-24"}, # Big Data Infrastructures for Processing Sentinel Data, Wolfgang Wagner
 {"west": 104.276733, "south": 8.423470, "east": 106.809082, "north": 11.156845, "crs": "EPSG:4326", "begin": "2007-01-01", "end": "2011-01-01"}, # THE USE OF SAR BACKSCATTER TIME SERIES FOR CHARACTERISING RICE PHENOLOGY, DUY NGUYEN
+{"west": 17.078934, "south": 47.691739, "east": 18.022385, "north": 48.039070, "crs": "EPSG:4326",
+     "begin": "2016-05-24", "end": "2016-05-24"}, # Digital Object Identifier 10.1109/TGRS.2018.2858004 1
+{"west": 5.229492, "south": 36.261992, "east": 19.555664, "north": 46.830134, "crs": "EPSG:4326",
+     "begin": "2017-10-01", "end": "2017-10-31"}, # Digital Object Identifier 10.1109/TGRS.2018.2858004 2
+{"west": 10.074463, "south": 44.425934, "east": 13.842773, "north": 46.065608, "crs": "EPSG:4326",
+     "begin": "2017-05-07", "end": "2017-05-07"}, # Digital Object Identifier 10.1109/TGRS.2018.2858004 3
+{"west": 10.994568, "south": 43.661911, "east": 13.059998, "north": 44.820812, "crs": "EPSG:4326",
+     "begin": "2017-04-01", "end": "2017-09-30"}, # Digital Object Identifier 10.1109/TGRS.2018.2858004 3
+{"west": 15.062256, "south": 47.197178, "east": 18.347168, "north": 48.994636, "crs": "EPSG:4326",
+     "begin": "2016-12-01", "end": "2016-12-31"}, #  https://doi.org/10.1080/01431161.2018.1479788 1
+{"west": 10.994568, "south": 43.661911, "east": 13.059998, "north": 44.820812, "crs": "EPSG:4326",
+     "begin": "2016-05-24", "end": "2016-05-24"}, #  doi:10.3390/rs10071030 1
+{"west": 6.855469, "south": 36.279707, "east": 19.291992, "north": 49.296472, "crs": "EPSG:4326",
+     "begin": "2017-10-01", "end": "2017-10-31"}, #  doi:10.3390/rs10071030 2
+{"west": 9.063721, "south": 44.190082, "east": 17.973633, "north": 49.253465, "crs": "EPSG:4326",
+     "begin": "2017-07-24", "end": "2017-07-24"}, #  doi:10.3390/rs10071030 3
+{"west": 6.350098, "south": 36.120128, "east": 18.830566, "north": 47.025206, "crs": "EPSG:4326",
+     "begin": "2017-07-23", "end": "2017-07-23"} #  doi:10.3390/rs10071030 4
 ]
 
+LOCAL_EODC_DRIVER_URL = "http://openeo.local.127.0.0.1.nip.io"
+
 logging.basicConfig(level=logging.INFO)
-logging.info("--- Data Changes Evaluation ---")
+logging.info("--- Impact Evaluation ---")
+logging.info("Connecting to the local back end {}...".format(LOCAL_EODC_DRIVER_URL))
+
+# Connect to database
+con = openeo.connect(LOCAL_EODC_DRIVER_URL)
+processes = con.get_processes()
+# Reset back end database
+logging.info("Reset back end database {}...".format(LOCAL_EODC_DRIVER_URL))
+con.resetdb()
+
+NUMBER_OF_ITERATIONS = 10
+
+counter = 1
+number_of_testcases = len(datasets)
+for testcase in datasets:
+
+    # Choose dataset
+    pgA = processes.get_collection(name="s2a_prd_msil1c")
+    pgA = processes.filter_daterange(pgA, extent=[testcase["begin"], testcase["end"]])
+    pgA = processes.filter_bbox(pgA, west=testcase["west"], south=testcase["south"], east=testcase["east"], north=testcase["north"], crs=testcase["crs"])
+
+    # Choose processes
+    pgA = processes.ndvi(pgA, nir="B08", red="B04")
+    pgA = processes.min_time(pgA)
+    #logging.info("Creating testcase {}/{}...".format(counter, number_of_testcases))
+    logging.info("Start testcase {}/{}...".format(counter, number_of_testcases))
+    #time.sleep(2)
+    for i in range(NUMBER_OF_ITERATIONS):
+        jobA = con.create_job(pgA.graph)
+        jobA.start_job()
+
+        desc = jobA.describe_job
+        while desc["status"] == "submitted":
+            desc = jobA.describe_job
+        logging.info("Status of testcase {}: {}".format(counter, desc["status"]))
+
+    logging.info("Finished testcase {}/{}...".format(counter, number_of_testcases))
+
+    counter += 1
+
+
+
+''' 1. Run Job A, which creates query PID-A. Get file list of PID-A '''
+
 ''' 1. Run Job A, which creates query PID-A. Get file list of PID-A '''
 logging.info("1. Run Job A, which creates query PID-A. Get file list of PID-A")
-LOCAL_EODC_DRIVER_URL = "http://openeo.local.127.0.0.1.nip.io"
-logging.info("Connecting to the local back end {}...".format(LOCAL_EODC_DRIVER_URL))
+
+
 con = openeo.connect(LOCAL_EODC_DRIVER_URL)
 
-# Choose dataset
-processes = con.get_processes()
-pgA = processes.get_collection(name="s2a_prd_msil1c")
-pgA = processes.filter_daterange(pgA, extent=["2017-05-01", "2017-05-31"])
-pgA = processes.filter_bbox(pgA, west=10.288696, south=45.935871, east=12.189331, north=46.905246, crs="EPSG:4326")
 
-# Choose processes
-pgA = processes.ndvi(pgA, nir="B08", red="B04")
-pgA = processes.min_time(pgA)
 logging.info("Preparing Porcess graph for Job A...")
 # Create job A out of the process graph A (pgA)
 logging.info("Creating Job A and retrieving Job A ID...")
