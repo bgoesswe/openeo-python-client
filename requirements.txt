@@ -3,3 +3,6 @@ shapely>=1.6.4
 cloudpickle
 numpy
 pandas
+csv
+psycopg2
+json

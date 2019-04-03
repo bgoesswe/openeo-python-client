@@ -139,9 +139,9 @@ for testcase in datasets:
 
     logging.info("Finished testcase {}/{}...".format(counter, number_of_testcases))
     counter += 1
-with open('storage_file.txt', 'w') as file:
+with open('storage_file.json', 'w') as file:
     file.write(json.dumps(storage_dict))
-with open('performance_file.txt', 'w') as file:
+with open('performance_file.json', 'w') as file:
     file.write(json.dumps(performance_dict))
 
 # Get Size of job table:
