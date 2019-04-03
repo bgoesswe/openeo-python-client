@@ -1,6 +1,8 @@
 import openeo
 import logging
 import time
+import psycopg2
+import json
 # west, south, east, north
 datasets = [
 {"west": 10.288696, "south": 45.935871, "east": 12.189331, "north": 46.905246, "crs": "EPSG:4326", "begin": "2017-05-01", "end": "2017-05-31"}, # running example
@@ -34,22 +36,31 @@ datasets = [
 
 LOCAL_EODC_DRIVER_URL = "http://openeo.local.127.0.0.1.nip.io"
 
+JOB_COLUMN_QUERY = "SELECT sum(pg_column_size(metrics)) as filesize, count(*) as filerow FROM jobs as t WHERE id = '{}'"
+QUERY_TABLE_QUERY = "SELECT sum(pg_column_size(t)) as filesize, count(*) as filerow FROM query as t WHERE query_pid = '{}'"
+QUERYJOB_TABLE_QUERY = "SELECT sum(pg_column_size(t)) as filesize, count(*) as filerow FROM queryjob as t WHERE job_id = '{}'"
+
+
 logging.basicConfig(level=logging.INFO)
 logging.info("--- Impact Evaluation ---")
 logging.info("Connecting to the local back end {}...".format(LOCAL_EODC_DRIVER_URL))
 
-# Connect to database
+# Connect to back end
 con = openeo.connect(LOCAL_EODC_DRIVER_URL)
 processes = con.get_processes()
 # Reset back end database
-logging.info("Reset back end database {}...".format(LOCAL_EODC_DRIVER_URL))
-con.resetdb()
 
-NUMBER_OF_ITERATIONS = 10
+
+storage_dict = {}
+performance_dict = {}
+
+NUMBER_OF_ITERATIONS = 50
+MAX_TRY = 10
 
 counter = 1
 number_of_testcases = len(datasets)
 for testcase in datasets:
+
 
     # Choose dataset
     pgA = processes.get_collection(name="s2a_prd_msil1c")
@@ -60,82 +71,82 @@ for testcase in datasets:
     pgA = processes.ndvi(pgA, nir="B08", red="B04")
     pgA = processes.min_time(pgA)
     #logging.info("Creating testcase {}/{}...".format(counter, number_of_testcases))
+
+    storage_dict[counter] = []
+    performance_dict[counter] = []
+
     logging.info("Start testcase {}/{}...".format(counter, number_of_testcases))
     #time.sleep(2)
-    for i in range(NUMBER_OF_ITERATIONS):
-        jobA = con.create_job(pgA.graph)
+    jobA = con.create_job(pgA.graph)
+    if jobA:
         jobA.start_job()
+    time.sleep(10)
+    for i in range(NUMBER_OF_ITERATIONS):
 
-        desc = jobA.describe_job
-        while desc["status"] == "submitted":
+        logging.info("Reset back end database {}...".format(LOCAL_EODC_DRIVER_URL))
+        con.resetdb()
+        logging.info("Execution testcase {}/{}...".format(i, NUMBER_OF_ITERATIONS))
+        #try:
+        jobA = con.create_job(pgA.graph)
+        if jobA:
+            jobA.start_job()
+
             desc = jobA.describe_job
-        logging.info("Status of testcase {}: {}".format(counter, desc["status"]))
+            tries = 0
+            while desc["status"] == "submitted":
+                time.sleep(2)
+                desc = jobA.describe_job
+                if tries >= MAX_TRY:
+                    break
+                tries += 1
+            pidA = jobA.get_data_pid()
+            try:
+                connection = psycopg2.connect(user="bg",
+                                          password="bg12345",
+                                          host="172.30.161.214",
+                                          port="5432",
+                                          database="jobs")
+                cursor = connection.cursor()
+                storage_entry = []
+                cursor.execute(JOB_COLUMN_QUERY.format(jobA.job_id))
+                job_size = cursor.fetchall()
+                storage_entry.append(job_size[0])
+                cursor.execute(QUERY_TABLE_QUERY.format(pidA))
+                query_size = cursor.fetchall()
+                storage_entry.append(query_size[0])
+                cursor.execute(QUERYJOB_TABLE_QUERY.format(jobA.job_id))
+                queryjob_size = cursor.fetchall()
+                storage_entry.append(queryjob_size[0])
+                storage_dict[counter].append(storage_entry)
+                #print(job_size)
+
+            except (Exception, psycopg2.Error) as error:
+                print("Error while fetching from PostgreSQL", error)
+            finally:
+                # closing database connection.
+                if (connection):
+                    cursor.close()
+                    connection.close()
+                    #print("PostgreSQL connection is closed")
+
+            logging.info("Status of testcase {}: {}".format(counter, desc["status"]))
+            if desc["status"] != "submitted":
+                performance_dict[counter].append(desc["status"].split(";"))
+        else:
+            time.sleep(5)
+        #except Exception:
+        #    logging.info("Status of testcase {}: exception".format(counter))
 
     logging.info("Finished testcase {}/{}...".format(counter, number_of_testcases))
-
     counter += 1
+with open('storage_file.txt', 'w') as file:
+    file.write(json.dumps(storage_dict))
+with open('performance_file.txt', 'w') as file:
+    file.write(json.dumps(performance_dict))
 
-
-
-''' 1. Run Job A, which creates query PID-A. Get file list of PID-A '''
-
-''' 1. Run Job A, which creates query PID-A. Get file list of PID-A '''
-logging.info("1. Run Job A, which creates query PID-A. Get file list of PID-A")
-
-
-con = openeo.connect(LOCAL_EODC_DRIVER_URL)
-
-
-logging.info("Preparing Porcess graph for Job A...")
-# Create job A out of the process graph A (pgA)
-logging.info("Creating Job A and retrieving Job A ID...")
-jobA = con.create_job(pgA.graph)
-logging.info("Job A with ID {} created...".format(jobA.job_id))
-logging.info("Starting Job A...")
-jobA.start_job()
-
-# Wait until the job execution was finished
-logging.info("Job A Processing...")
-desc = jobA.describe_job
-while desc["status"] == "submitted":
-    desc = jobA.describe_job
-
-# re-execute query and get the resulting file list from the back end
-pidA = jobA.get_data_pid()
-file_list = con.get_filelist(pidA)
-logging.info("Query re-execution filelist: {}".format(file_list))
-
-''' 2. Update one of the resulting files of the PID-A query  '''
-# Use flag on the back end to switch to the simulation CSW back end.
-logging.info("Update one of the resulting files of the PID-A query")
-con.set_mockupstate(deleted=True)
-file2_list = con.get_filelist(pidA)
-
-''' 3. Researcher A cites the input data in a publication  '''
-logging.info("3. Researcher A cites the input data in a publication")
-''' 4. Researcher B uses the same input data of job A for job B  '''
-logging.info(str(file_list["input_files"] == file2_list["input_files"]))
-logging.info("4. Researcher B uses the same input data of job A for job B")
-# Take input data of job A by using the input data pid A of job A
-pgB = processes.get_collection(data_pid=pidA)
-
-# Choose processes
-pgB = processes.ndvi(pgB, nir="B08", red="B04")
-pgB = processes.max_time(pgB)
-logging.info("Preparing Porcess graph for Job B using data PID from job A {}...".format(pidA))
-# Create job B out of the process graph B (pgB)
-logging.info("Preparing Porcess graph for Job B using data PID from job A {}...")
-jobB = con.create_job(pgB.graph)
-logging.info("Creating and starting job B with id {}".format(jobB.job_id))
-jobB.start_job()
-
-logging.info("Job A Processing...")
-desc = jobB.describe_job
-while desc["status"] == "submitted":
-    desc = jobB.describe_job
-logging.info("Finished processing job B")
-
-logging.info("JobB data pid: {}".format(jobB.get_data_pid_url()))
-
-logging.info("Finished Use Case 1")
-
+# Get Size of job table:
+# SELECT sum(pg_column_size(metrics)) as filesize, count(*) as filerow FROM jobs as t WHERE id = ;
+# Get Size of Query table:
+# SELECT sum(pg_column_size(t)) as filesize, count(*) as filerow FROM query as t WHERE id = ;
+# Get Size of QueryJob table:
+# SELECT sum(pg_column_size(t)) as filesize, count(*) as filerow FROM queryjob as t WHERE job_id = ;

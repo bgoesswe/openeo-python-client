@@ -57,8 +57,8 @@ class RESTJob(Job):
 
                 response["context_model"] = response["metrics"]
             return response
-        elif request.status_code == 500:
-            return {"status": "error"}
+        #elif request.status_code == 500:
+        #    return {"status": "error"}
         else:
             return {"status": "submitted"}
 
