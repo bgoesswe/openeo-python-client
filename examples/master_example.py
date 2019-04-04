@@ -40,7 +40,8 @@ print(cap.currency())
 print(cap.list_plans())
 
 # Test Processes
-
+# {"testcase": 18, "west": 6.350098, "south": 36.120128, "east": 18.830566, "north": 47.025206, "crs": "EPSG:4326",
+#       "begin": "2017-07-23", "end": "2017-07-23"
 processes = con.get_processes()
 pg = processes.get_collection(name="s2a_prd_msil1c")
 print(pg.graph)
@@ -67,7 +68,7 @@ time.sleep(5)
 #job_comp = job.diff(job2)
 #job_desc = job.get_data_pid()
 #job_desc = job.get_backend_version()
-job_desc = job.describe_job()
+job_desc = job.describe_job
 print(job_desc)
 
 #job.download_results("/tmp/testfile")
