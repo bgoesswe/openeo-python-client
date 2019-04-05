@@ -1,5 +1,6 @@
 import numpy as np
 from datetime import datetime
+from PIL import Image
 coords = [(10.288696, 45.935871), (12.189331, 46.905246)]
 
 FACTOR_SIMPLY = 1000
@@ -78,3 +79,8 @@ ndvi = calc_ndvi(area, area)
 min_time_data = np.fmin.reduce(ndvi)
 
 print(min_time_data)
+
+im = Image.fromarray(min_time_data, mode='F')
+
+im.save("/tmp/{}_result.tiff".format("iwas2"),"TIFF")
+

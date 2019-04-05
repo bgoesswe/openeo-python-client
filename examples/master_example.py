@@ -27,7 +27,7 @@ version = con.version(timestamp)
 
 #Test Connection
 print(con.list_processes())
-print(con.list_collections())
+#print(con.list_collections())
 #print(con.describe_collection("s2a_prd_msil1c"))
 
 
@@ -53,16 +53,18 @@ pg = processes.ndvi(pg, nir="B08", red="B04")
 print(pg.graph)
 pg = processes.min_time(pg)
 print(pg.graph)
-
+pg2 = processes.max_time(pg)
 
 # Test Job
 
-job = con.create_job(pg.graph)
+#job = con.create_job(pg.graph)
 
-#job2 = con.create_job(pg.graph)
+job = con.create_job(pg.graph)
 print(job.job_id)
 print(job.start_job())
-time.sleep(5)
+
+#job = con.get_job()
+#time.sleep(5)
 #job2.start_job()
 time.sleep(5)
 #job_comp = job.diff(job2)

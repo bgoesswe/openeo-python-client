@@ -39,7 +39,7 @@ LOCAL_EODC_DRIVER_URL = "http://openeo.local.127.0.0.1.nip.io"
 
 LOCAL_PSQL_USER = "bg"
 LOCAL_PSQL_PWD = "bg12345"
-LOCAL_PSQL_URL = "172.30.161.214"
+LOCAL_PSQL_URL = "172.30.120.58"#172.30.161.214"
 
 JOB_COLUMN_QUERY = "SELECT sum(pg_column_size(metrics)) as filesize, count(*) as filerow FROM jobs as t WHERE id = '{}'"
 QUERY_TABLE_QUERY = "SELECT sum(pg_column_size(t)) as filesize, count(*) as filerow FROM query as t WHERE query_pid = '{}'"
@@ -59,7 +59,7 @@ processes = con.get_processes()
 storage_dict = {}
 performance_dict = {}
 
-NUMBER_OF_ITERATIONS = 50
+NUMBER_OF_ITERATIONS = 1
 MAX_TRY = 10
 
 counter = 1
