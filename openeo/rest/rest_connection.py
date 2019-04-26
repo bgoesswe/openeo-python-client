@@ -237,7 +237,7 @@ class RESTConnection(Connection):
             if updated:
                 data_info = self.get(self.root + '/collections/{}/updatedresult'.format(data_pid), auth=False)
             else:
-                data_info = self.get(self.root + '/collections/{}/result'.format(data_pid), auth=False)
+                data_info = self.get(self.root + '/data/{}/result'.format(data_pid), auth=False)
             return self.parse_json_response(data_info)
         else:
             raise ValueError("Invalid argument col_id: {}".format(str(data_pid)))

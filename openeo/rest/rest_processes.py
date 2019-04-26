@@ -19,13 +19,13 @@ class RESTProcesses(ImageCollection):
     def __init__(self, connection:Connection):
         self.connection = connection
 
-    def get_collection(self, name=None, data_pid=None) -> 'RESTProcessgraph':
+    def get_collection(self, name=None) -> 'RESTProcessgraph':
         """
         Get imagery by id.
         :param name: String image collection identifier
         :return: process graph: RestProcessGraph the imagery with the id
         """
-        if (not name) and (not data_pid):
+        if (not name):
             return None
 
         pgraph = RESTProcessgraph(pg_id=None, connection=self.connection)
@@ -35,10 +35,23 @@ class RESTProcesses(ImageCollection):
         if name:
             pgraph.graph["name"] = name
 
+        return pgraph
+
+    def get_data_by_pid(self, data_pid=None) -> 'RESTProcessgraph':
+        """
+        Get imagery by pid.
+        :param name: String image collection identifier
+        :return: process graph: RestProcessGraph the imagery with the id
+        """
+        if (not data_pid):
+            return None
+
+        pgraph = RESTProcessgraph(pg_id=None, connection=self.connection)
+
+        pgraph.graph = {"process_id": "get_collection"}
+
         if data_pid:
             pgraph.graph["data_pid"] = data_pid
-
-
 
         return pgraph
 

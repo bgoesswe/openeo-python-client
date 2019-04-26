@@ -54,7 +54,7 @@ logging.info("3. Researcher A cites the input data in a publication")
 ''' 4. Researcher B uses the same input data of job A for job B  '''
 logging.info("4. Researcher B uses the same input data of job A for job B")
 # Take input data of job A by using the input data pid A of job A
-pgB = processes.get_collection(data_pid=pidA)
+pgB = processes.get_data_by_pid(data_pid=pidA)
 
 # Choose processes
 pgB = processes.ndvi(pgB, nir="B08", red="B04")

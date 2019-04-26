@@ -49,13 +49,13 @@ class RESTJob(Job):
         if request.status_code == 200 or request.status_code == 201:
             response = self.connection.parse_json_response(request)
 
-            if "metrics" in response:
-                if response["metrics"]["input_data"] in str(response["process_graph"]):
+            if "context_model" in response:
+                if response["context_model"]["input_data"] in str(response["process_graph"]):
                     if "data_pid" in str(response["process_graph"]):
                         response["logs"] = "Warning: data PID changed"
                         response["status"] = "finished with warnings"
 
-                response["context_model"] = response["metrics"]
+                response["context_model"] = response["context_model"]
             return response
         #elif request.status_code == 500:
         #    return {"status": "error"}
@@ -127,7 +127,7 @@ class RESTJob(Job):
         if "input_data" in desc:
             input_data = desc["input_data"]
 
-        input_data = self.connection.endpoint+"/collections/"+input_data
+        input_data = self.connection.endpoint+"/data/"+input_data
 
         return input_data
 
@@ -148,9 +148,9 @@ class RESTJob(Job):
 
         backend_version = None
 
-        if "metrics" in desc:
-            if "start_time" in desc["metrics"]:
-                start_time = desc["metrics"]["start_time"]
+        if "context_model" in desc:
+            if "start_time" in desc["context_model"]:
+                start_time = desc["context_model"]["start_time"]
                 timestamp = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S.%f')
                 backend_version = self.connection.version(timestamp)
 
@@ -175,18 +175,18 @@ class RESTJob(Job):
         """ Compare job context model."""
 
         self_cm = self.describe_job
-        if "metrics" in self_cm:
+        if "context_model" in self_cm:
             if "process_graph" in self_cm:
-                self_cm["metrics"]["process_graph"] = self_cm["process_graph"]
-                self_cm = self_cm["metrics"]
+                self_cm["context_model"]["process_graph"] = self_cm["process_graph"]
+                self_cm = self_cm["context_model"]
         else:
             return None
 
         target_cm = target_job.describe_job
-        if "metrics" in target_cm:
+        if "context_model" in target_cm:
             if "process_graph" in target_cm:
-                target_cm["metrics"]["process_graph"] = target_cm["process_graph"]
-                target_cm = target_cm["metrics"]
+                target_cm["context_model"]["process_graph"] = target_cm["process_graph"]
+                target_cm = target_cm["context_model"]
         else:
             return None
 
@@ -247,6 +247,7 @@ class RESTJob(Job):
 
                     handle.write(block)
         else:
+            #return r.status_code
             raise ConnectionAbortedError(r.text)
         return r.status_code
 
